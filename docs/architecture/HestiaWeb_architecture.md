@@ -42,17 +42,19 @@ The Hestia Web Interface can be divided into two main sub-systems as mentioned i
 * Back-end server that connects users to their local Hestia controllers and holds user and server information
 
 ## Website Front-End
-Since the frontend of the website is the first aspect of the product that the customer will interact with, and will be one of the main sources of content or discontent throughout their user experience, a variety of design choices have to be made. The website will allow a user to log into their home server through a web server, and then manage the devices on their home server through a range of different controls, and do this in the knowledge that themselves and their information are being kept safe.
+Since the frontend of the website is the first aspect of the product that the customer will interact with, and will be one of the main sources of content or discontent throughout their user experience, a variety of design choices have to be made. 
 
 ![Website Design](images/Hestia login concept.png  "Website Front-End Design")
 
 ### Design choices
-We decided that the user should decide which home server they are connecting to upon login, which prevents the added complexity caused by switching between servers (although this could be added later on). Therefore the main focus of the website will be on the list of devices present within this server (which can be found through GET), and on the operations that can be applied to them. These will mirror those already implemented by Hestia, such as renaming or deleting a device, but more functionality added, such as using buttons and sliders in order to change the activators of a device, instead of having to enter values.
-#### Structural choices
-The page is laid out in such a way that the user can easily cycle between personal information, their devices and settings. Devices can also be grouped by the user, for example by what room they are in or their function (such as lights), which will help reduce complexity, as a large house or an office could have very many of these devices
-#### Aesthetical choices
-The design overall will be quite minimalist, with some elements such as colour taken from the Hestia logo. The logos we use, besides the main Hestia logo, have been taken from the Material Icons database (https://material.io/icons/), which provides a large set of intuitive, user friendly icons. 
 
+#### Structural choices
+Something about the structure of the information of the webpage; having a dash board.
+Making sure that everything could be tabbed through, make it as accessible as possible (e.g. good design).
+#### Aesthetical choices
+The design overall will be quite minimalist, with some elements such as colour taken from the Hestia logo. The logos we use, besides the main Hestia logo, have been taken from the Material Icons database (https://material.io/icons/), which provides a large set of intuitive, user frien dly icons.
+Choice of colour, elements, layout of the page, logos, images, etc.
+Maybe use bootstrap or something? Talk about why
 
 ## Website Back-End
 The backend of the webapp will serve as a middleman between the web frontend and the user's controller (local server). This means that there needs to be an interface to be able to send queries to the server. Furthermore, a user database is required in order to maintain a secure environment in which users may only have permission to interact with systems they own. Unauthorized access to server data, user data, or any other sensitive information is completely forbidden.
@@ -73,7 +75,35 @@ Firebase has free and paid versions, where the free version allows up to 100 Sim
 
 During development it is essential to design the system in such a way that switching from Firebase to an alternative service does not incur large infrastructural cost.
 
-##Glossary
+### The server as a middleman
+Currently, we have developed a server that serves as the liaison between the Hestia server and the user's interface. Below we show a small section of the code in Python.
+
+```
+@app.route('/request', methods=['POST'])
+def apiRequestHandler():
+    json = request.get_json()
+    url = json["query"]
+    method = json["method"]
+    payload = json["payload"]
+    return routeRequest(method, url, payload)
+```
+
+Every time a query is done on the webpage, server sees that the */request* is being pinged. The above piece of code breaks down what the information consists of. Firstly, it gets a JSON objects, where the *url* variable is set to be the URL, such that it can access either plugins or devices. Secondly, a certain method is set in the data that is being sent, such as GET, POST, PUT, or DELETE. Furthermore, depending on the method, there may be a payload, which contains the *body* of the message. For instance, for posting a new device, this would consist of a name, an ip, and a port number. Also, the corresponding plugin is required, which in this case also has to be part of the message sent from the webapp to our server. This differs from for instance a GET request, which simply requires a URL and the method. 
+
+Based on this information we have a function routeRequest, which follows up with the corresponding action, and sends the appropriate data.
+
+```
+def routeRequest(method, query, payload):
+	switcher = {
+		'GET': requests.get(query, verify=False).text,
+		'POST': requests.post(query, verify=False, json=payload).text,
+		'PUT': requests.put(query, verify=False, json=payload).text,
+		'DELETE': requests.delete(query, verify=False).text,
+	}
+	return switcher.get(method, 'Invalid REST method');
+```
+
+## Glossary
 Below are defined terms used in the architecture document:
 
 * *Controller*: The local Hestia Server in a user's house. The controller simply runs the Hestia Server previously developed by the client, and has a unique IP address and port number.
@@ -96,4 +126,3 @@ Have not discussed 2m concurrent users requirement. This can be kept in consider
 | Rens Nijman    |  2018-03-12 | Whole document | More introduction and back-end.     |
 | Andrew Lalis | 2018-03-12 | Glossary | Added glossary. |
 | Phil Oetinger  |  2018-03-13 | Whole Document | Cleaned up the grammar, removed redundant sentences, expanded upon some points |
-| Roman Bell     |  2018-03-13 | Frontend | Added content regarding the frontend section |
